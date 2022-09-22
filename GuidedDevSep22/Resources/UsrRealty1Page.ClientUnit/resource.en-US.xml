@@ -3,6 +3,7 @@
 	<Group Type="String">
 		<Items>
 			<Item Name="Caption" Value="Edit page: &quot;Realty&quot;" />
+			<Item Name="LocalizableStrings.MyCaption.Value" Value="Push me!" />
 		</Items>
 	</Group>
 </Resources>

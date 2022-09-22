@@ -1,7 +1,12 @@
-define("UsrRealty1Page", [], function() {
+define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 	return {
 		entitySchemaName: "UsrRealty",
-		attributes: {},
+		attributes: {
+			"CanChangePrice": {
+				dataValueType: this.Terrasoft.DataValueType.BOOLEAN,
+				value: false
+			}
+		},
 		modules: /**SCHEMA_MODULES*/{}/**SCHEMA_MODULES*/,
 		details: /**SCHEMA_DETAILS*/{
 			"Files": {
@@ -13,8 +18,112 @@ define("UsrRealty1Page", [], function() {
 				}
 			}
 		}/**SCHEMA_DETAILS*/,
-		businessRules: /**SCHEMA_BUSINESS_RULES*/{}/**SCHEMA_BUSINESS_RULES*/,
-		methods: {},
+		businessRules: /**SCHEMA_BUSINESS_RULES*/{
+			"UsrComment": {
+				"ac2d912f-b10a-4269-8b7c-ded2e5586440": {
+					"uId": "ac2d912f-b10a-4269-8b7c-ded2e5586440",
+					"enabled": true,
+					"removed": false,
+					"ruleType": 0,
+					"property": 0,
+					"logical": 0,
+					"conditions": [
+						{
+							"comparisonType": 7,
+							"leftExpression": {
+								"type": 1,
+								"attribute": "UsrPriceUSD"
+							},
+							"rightExpression": {
+								"type": 0,
+								"value": 999.99,
+								"dataValueType": 5
+							}
+						}
+					]
+				}
+			},
+			"UsrManager": {
+				"83fef189-0b38-41a1-b5d6-5bb01c8dc1d9": {
+					"uId": "83fef189-0b38-41a1-b5d6-5bb01c8dc1d9",
+					"enabled": true,
+					"removed": false,
+					"ruleType": 1,
+					"baseAttributePatch": "Type",
+					"comparisonType": 3,
+					"autoClean": false,
+					"autocomplete": false,
+					"type": 0,
+					"value": "60733efc-f36b-1410-a883-16d83cab0980",
+					"dataValueType": 10
+				},
+				"2f2878af-1130-4ec3-92e5-44743cdf9493": {
+					"uId": "2f2878af-1130-4ec3-92e5-44743cdf9493",
+					"enabled": true,
+					"removed": false,
+					"ruleType": 1,
+					"baseAttributePatch": "Age",
+					"comparisonType": 8,
+					"autoClean": false,
+					"autocomplete": false,
+					"type": 0,
+					"value": 25,
+					"dataValueType": 4
+				}
+			},
+			"UsrPriceUSD": {
+				"168bbbea-cb58-4627-9351-b20d51d565df": {
+					"uId": "168bbbea-cb58-4627-9351-b20d51d565df",
+					"enabled": true,
+					"removed": false,
+					"ruleType": 0,
+					"property": 1,
+					"logical": 0,
+					"conditions": [
+						{
+							"comparisonType": 3,
+							"leftExpression": {
+								"type": 1,
+								"attribute": "CanChangePrice"
+							},
+							"rightExpression": {
+								"type": 0,
+								"value": true,
+								"dataValueType": 12
+							}
+						}
+					]
+				}
+			}
+		}/**SCHEMA_BUSINESS_RULES*/,
+		methods: {
+			onEntityInitialized: function() {
+				this.callParent(arguments);
+				this.setSecurityAttribute();
+			},
+			setSecurityAttribute: function() {
+				RightUtilities.checkCanExecuteOperation({
+					operation: "CanChangeRealtyPrice"
+				}, this.getPriceOperationResult, this);
+			},
+
+			getPriceOperationResult: function(result) {
+				this.set("CanChangePrice", result);
+			},
+
+			onMyButtonClick: function() {
+				this.console.log("Button pressed!");
+			},
+			getMyButtonEnabled: function() {
+				var result = true;
+				var name = this.get("UsrName");
+				if (!name) {
+					result = false;
+				}
+				this.console.log("'get button enabled property' method called");
+				return result;
+			}
+		},
 		dataModels: /**SCHEMA_DATA_MODELS*/{}/**SCHEMA_DATA_MODELS*/,
 		diff: /**SCHEMA_DIFF*/[
 			{
@@ -73,6 +182,33 @@ define("UsrRealty1Page", [], function() {
 			},
 			{
 				"operation": "insert",
+				"name": "MyButton",
+				"values": {
+					"itemType": 5,
+					"caption": {
+						"bindTo": "Resources.Strings.MyCaption"
+					},
+					"click": {
+						"bindTo": "onMyButtonClick"
+					},
+					"enabled": {
+						"bindTo": "getMyButtonEnabled"
+					},
+					"style": "red",
+					"layout": {
+						"colSpan": 24,
+						"rowSpan": 1,
+						"column": 0,
+						"row": 3,
+						"layoutName": "ProfileContainer"
+					}
+				},
+				"parentName": "ProfileContainer",
+				"propertyName": "items",
+				"index": 3
+			},
+			{
+				"operation": "insert",
 				"name": "LOOKUPfcb28989-94a3-4f61-9cee-16122e6261e2",
 				"values": {
 					"layout": {
@@ -114,7 +250,7 @@ define("UsrRealty1Page", [], function() {
 				"name": "STRINGd306dcaf-c090-4de8-9007-8db8096c8baa",
 				"values": {
 					"layout": {
-						"colSpan": 24,
+						"colSpan": 12,
 						"rowSpan": 1,
 						"column": 0,
 						"row": 1,
@@ -127,6 +263,25 @@ define("UsrRealty1Page", [], function() {
 				"parentName": "Header",
 				"propertyName": "items",
 				"index": 2
+			},
+			{
+				"operation": "insert",
+				"name": "LOOKUP08ff5d21-ccc7-4f84-abb5-cba153c7f315",
+				"values": {
+					"layout": {
+						"colSpan": 12,
+						"rowSpan": 1,
+						"column": 12,
+						"row": 1,
+						"layoutName": "Header"
+					},
+					"bindTo": "UsrManager",
+					"enabled": true,
+					"contentType": 5
+				},
+				"parentName": "Header",
+				"propertyName": "items",
+				"index": 3
 			},
 			{
 				"operation": "insert",
