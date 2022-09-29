@@ -1,0 +1,15 @@
+= MetaData.Schema.UId "ecebb550-e71a-44fe-886d-534742e4513b"
+= MetaData.Schema.A2 "UsrNewRealty_FormPage"
+= MetaData.Schema.A5 "6f71e54c-1960-40c9-94f6-073fd67699ab"
++ MetaData.Schema.B2 {
+  "UId": "3fa6d5fc-867f-4261-2185-4111ab549de1",
+  "A2": "addRecord_m15y5ge_caption",
+  "A3": "ecebb550-e71a-44fe-886d-534742e4513b",
+  "A4": "ecebb550-e71a-44fe-886d-534742e4513b",
+  "A5": "e6772e42-14ac-4ed0-842d-d505a69eadad"
+}
+~ MetaData.Schema.B2 ["3fa6d5fc-867f-4261-2185-4111ab549de1"]
+= MetaData.Schema.B6 "20a052de-4cfa-4b11-95a9-770997cefb9d"
+= MetaData.Schema.HD1 "0f8eb896-7b62-4dfa-bd55-a414f50932a7"
+- MetaData.Schema.B7
++ MetaData.Schema.B7 false

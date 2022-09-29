@@ -1,10 +1,43 @@
-define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
+define("UsrRealty1Page", ["RightUtilities", "ServiceHelper"], function(RightUtilities, ServiceHelper) {
 	return {
 		entitySchemaName: "UsrRealty",
 		attributes: {
+			"UsrManager": {
+				"dataValueType": Terrasoft.DataValueType.LOOKUP,
+				"lookupListConfig": {
+                    /* The array of filters to apply to the query that populates the lookup field with data. */
+                    "filters": [
+                        function() {
+                            var filterGroup = Ext.create("Terrasoft.FilterGroup");
+                            filterGroup.add("ConnectedUserIsPresentAndActive",
+                                Terrasoft.createColumnFilterWithParameter(
+                                    Terrasoft.ComparisonType.EQUAL,
+                                    "[SysAdminUnit:Contact:].Active",
+                                    true));
+                            return filterGroup;
+                        }
+                    ]
+                }
+			},
 			"CanChangePrice": {
 				dataValueType: this.Terrasoft.DataValueType.BOOLEAN,
 				value: false
+			},
+			"CommissionUSD": {
+				"dataValueType": Terrasoft.DataValueType.FLOAT,
+				"type": Terrasoft.ViewModelColumnType.VIRTUAL_COLUMN,
+				"value": 0,
+                dependencies: [
+                    {
+                        columns: ["UsrPriceUSD", "UsrOfferType"],
+                        methodName: "calculateCommission"
+                    }
+                ]
+			},
+			"UsrOfferType": {
+				lookupListConfig: {
+					columns: ["UsrCommissionMultiplier"]
+				}
 			}
 		},
 		modules: /**SCHEMA_MODULES*/{}/**SCHEMA_MODULES*/,
@@ -15,6 +48,14 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 				"filter": {
 					"masterColumn": "Id",
 					"detailColumn": "UsrRealty"
+				}
+			},
+			"UsrSchemaf35e53e3Detaileada33b2": {
+				"schemaName": "UsrRealtyVisitDetailGrid",
+				"entitySchemaName": "UsrRealtyVisit",
+				"filter": {
+					"detailColumn": "UsrParentRealty",
+					"masterColumn": "Id"
 				}
 			}
 		}/**SCHEMA_DETAILS*/,
@@ -97,9 +138,40 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 			}
 		}/**SCHEMA_BUSINESS_RULES*/,
 		methods: {
+            setValidationConfig: function() {
+                /* Call the initialization of the parent view model's validators. */
+                this.callParent(arguments);
+                this.addColumnValidator("UsrPriceUSD", this.positiveValueValidator);
+                this.addColumnValidator("UsrArea", this.positiveValueValidator);
+            },
+			
+			positiveValueValidator: function(value, column) {
+				var msg = "";
+				if (value < 0) {
+					msg = this.get("Resources.Strings.ValueMustBeGreaterThanZero");
+				}
+				return {
+					invalidMessage: msg
+				};
+			},
+			
+			calculateCommission: function() {
+				var price = this.get("UsrPriceUSD");
+				if (!price) {
+					price = 0;
+				}
+				var offerTypeObject = this.get("UsrOfferType");
+				var coeff = 0;
+				if (offerTypeObject) {
+					coeff = offerTypeObject.UsrCommissionMultiplier;
+				}
+				var commission = price * coeff;
+				this.set("CommissionUSD", commission);
+			},
 			onEntityInitialized: function() {
 				this.callParent(arguments);
 				this.setSecurityAttribute();
+				this.calculateCommission();
 			},
 			setSecurityAttribute: function() {
 				RightUtilities.checkCanExecuteOperation({
@@ -113,6 +185,13 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 
 			onMyButtonClick: function() {
 				this.console.log("Button pressed!");
+				this.showInformationDialog("Button pressed!");
+				var managerData = {
+					value: "4d201b1f-86c9-44a4-a655-4b4889c9f95d",  // 4d201b1f-86c9-44a4-a655-4b4889c9f95d
+					displayValue: "Joe Biden"
+				};
+				this.set("UsrManager", managerData);
+				
 			},
 			getMyButtonEnabled: function() {
 				var result = true;
@@ -122,7 +201,32 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 				}
 				this.console.log("'get button enabled property' method called");
 				return result;
+			},
+			onRunWebServiceButtonClick: function() {
+				var typeObject = this.get("UsrType");
+				if (!typeObject) {
+					return;
+				}
+				var typeId = typeObject.value;
+				var offerTypeObject = this.get("UsrOfferType");
+				if (!offerTypeObject) {
+					return;
+				}
+				var offerTypeId = offerTypeObject.value;
+				var serviceData = {
+					realtyTypeId: typeId,
+					realtyOfferTypeId: offerTypeId
+				};				
+				this.console.log("1");
+				ServiceHelper.callService("RealtyService", "GetTotalAmountByTypeId", this.getWebServiceResult, serviceData, this);
+				// DO NOT expect to get data result here
+				this.console.log("2");
+			},
+			getWebServiceResult: function(response, success) {
+				this.console.log("3");
+				this.Terrasoft.showInformation("Total amount by typeId: " + response.GetTotalAmountByTypeIdResult);
 			}
+
 		},
 		dataModels: /**SCHEMA_DATA_MODELS*/{}/**SCHEMA_DATA_MODELS*/,
 		diff: /**SCHEMA_DIFF*/[
@@ -182,6 +286,27 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 			},
 			{
 				"operation": "insert",
+				"name": "CommissionControl",
+				"values": {
+					"layout": {
+						"colSpan": 24,
+						"rowSpan": 1,
+						"column": 0,
+						"row": 3,
+						"layoutName": "ProfileContainer"
+					},
+					"bindTo": "CommissionUSD",
+					"enabled": false,
+					"caption": {
+						"bindTo": "Resources.Strings.CommissionCaption"
+					}
+				},
+				"parentName": "ProfileContainer",
+				"propertyName": "items",
+				"index": 3
+			},
+			{
+				"operation": "insert",
 				"name": "MyButton",
 				"values": {
 					"itemType": 5,
@@ -196,16 +321,40 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 					},
 					"style": "red",
 					"layout": {
-						"colSpan": 24,
+						"colSpan": 12,
 						"rowSpan": 1,
 						"column": 0,
-						"row": 3,
+						"row": 4,
 						"layoutName": "ProfileContainer"
 					}
 				},
 				"parentName": "ProfileContainer",
 				"propertyName": "items",
-				"index": 3
+				"index": 4
+			},
+			{
+				"operation": "insert",
+				"name": "RunWebServiceButton",
+				"values": {
+					"itemType": 5,
+					"caption": {
+						"bindTo": "Resources.Strings.RunWebServiceButtonCaption"
+					},
+					"click": {
+						"bindTo": "onRunWebServiceButtonClick"
+					},
+					"style": "green",
+					"layout": {
+						"colSpan": 12,
+						"rowSpan": 1,
+						"column": 12,
+						"row": 4,
+						"layoutName": "ProfileContainer"
+					}
+				},
+				"parentName": "ProfileContainer",
+				"propertyName": "items",
+				"index": 5
 			},
 			{
 				"operation": "insert",
@@ -285,10 +434,10 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 			},
 			{
 				"operation": "insert",
-				"name": "NotesAndFilesTab",
+				"name": "Tab65f5995bTabLabel",
 				"values": {
 					"caption": {
-						"bindTo": "Resources.Strings.NotesAndFilesTabCaption"
+						"bindTo": "Resources.Strings.Tab65f5995bTabLabelTabCaption"
 					},
 					"items": [],
 					"order": 0
@@ -296,6 +445,31 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 				"parentName": "Tabs",
 				"propertyName": "tabs",
 				"index": 0
+			},
+			{
+				"operation": "insert",
+				"name": "UsrSchemaf35e53e3Detaileada33b2",
+				"values": {
+					"itemType": 2,
+					"markerValue": "added-detail"
+				},
+				"parentName": "Tab65f5995bTabLabel",
+				"propertyName": "items",
+				"index": 0
+			},
+			{
+				"operation": "insert",
+				"name": "NotesAndFilesTab",
+				"values": {
+					"caption": {
+						"bindTo": "Resources.Strings.NotesAndFilesTabCaption"
+					},
+					"items": [],
+					"order": 1
+				},
+				"parentName": "Tabs",
+				"propertyName": "tabs",
+				"index": 1
 			},
 			{
 				"operation": "insert",
@@ -353,7 +527,7 @@ define("UsrRealty1Page", ["RightUtilities"], function(RightUtilities) {
 				"operation": "merge",
 				"name": "ESNTab",
 				"values": {
-					"order": 1
+					"order": 2
 				}
 			}
 		]/**SCHEMA_DIFF*/

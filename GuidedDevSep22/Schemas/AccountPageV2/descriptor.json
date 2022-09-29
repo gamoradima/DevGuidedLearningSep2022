@@ -1,0 +1,14 @@
+﻿{
+  "Descriptor": {
+    "UId": "8d5e278f-922b-49f9-bc5d-22b4e87e6d3e",
+    "Name": "AccountPageV2",
+    "ModifiedOnUtc": "\/Date(1663953554000)\/",
+    "Parent": {
+      "UId": "f5edc79d-8d39-4e51-a255-57ccf3f1349e",
+      "Name": "AccountPageV2"
+    },
+    "ExtendParent": true,
+    "ManagerName": "ClientUnitSchemaManager",
+    "Caption": "Account edit page"
+  }
+}
